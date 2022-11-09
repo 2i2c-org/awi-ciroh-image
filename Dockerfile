@@ -42,10 +42,24 @@ RUN export PATH=${NB_PYTHON_PREFIX}/bin:${PATH} \
  && pip install --no-cache-dir \
         https://github.com/jupyterhub/jupyter-remote-desktop-proxy/archive/main.zip
 
+# Gfortran support
+#COPY environment.yaml /tmp/
+#RUN mamba env update --name ${CONDA_ENV} -f /tmp/environment.yaml
+
+RUN apt-get update && \
+    apt-get install -yq make cmake gfortran gcc-multilib glibc-source libnetcdff-dev libcoarrays-dev libopenmpi-dev && \
+    apt-get install -yq libgl-dev libglu-dev libglib2.0-dev libsm-dev libxrender-dev libfontconfig1-dev libxext-dev && \
+    apt-get clean -q
+RUN pip3 install numpy pandas xarray netcdf4 joblib toolz pyyaml Cython
+
+
 # Install jupyterlab_vim extension
 RUN pip install jupyterlab_vim
+# Update custom Jupyter Lab settings
+RUN sed -i 's/\"default\": true/\"default\": false/g' /srv/conda/envs/notebook/share/jupyter/labextensions/@axlair/jupyterlab_vim/schemas/@axlair/jupyterlab_vim/plugin.json
 
-# TO download the folder/files:
+
+# To download the folder/files:
 RUN pip install jupyter-tree-download
 
 # Install Google Cloud SDK (gcloud, gsutil)
@@ -55,14 +69,5 @@ RUN apt-get update && \
     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg  add - && \
     apt-get update -y && \
     apt-get install google-cloud-sdk -y
-
-# Gfortran support
-RUN apt-get update && \
-    apt-get install -yq python3.9 python3-pip python3-wheel make cmake gfortran gcc-multilib libnetcdff-dev libcoarrays-dev libopenmpi-dev && \
-    apt-get clean -q
-RUN pip3 install numpy pandas xarray netcdf4 joblib toolz pyyaml Cython
-
-# Update custom Jupyter Lab settings
-RUN sed -i 's/\"default\": true/\"default\": false/g' /srv/conda/envs/notebook/share/jupyter/labextensions/@axlair/jupyterlab_vim/schemas/@axlair/jupyterlab_vim/plugin.json
 
 USER ${NB_USER}
